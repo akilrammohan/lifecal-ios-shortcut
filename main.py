@@ -97,7 +97,7 @@ def generate_calendar_image(target_date: datetime) -> Image.Image:
 
     # Load font for year text
     try:
-        year_font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 21)
+        year_font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 42)
     except:
         year_font = ImageFont.load_default()
 
