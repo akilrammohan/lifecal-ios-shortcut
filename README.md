@@ -106,7 +106,7 @@ Edit `main.py` to customize:
 
 Live calendar image (updates automatically with today's date):
 
-![Calendar Example](https://lifecal-ios-shortcut.vercel.app/calendar)
+![Calendar Example](https://wallpaper.akilr.com/calendar)
 
 The image shows:
 - **White squares**: Days that have passed
