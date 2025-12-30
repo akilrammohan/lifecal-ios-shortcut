@@ -1,0 +1,9 @@
+# Exclude uv-specific files that conflict with Vercel's Python runtime
+uv.lock
+.venv/
+.python-version
+pyproject.toml
+
+# Test files
+test_*.png
+*.png
