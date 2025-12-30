@@ -19,3 +19,4 @@ test_*.png
 
 # OS
 .DS_Store
+.vercel
