@@ -45,6 +45,10 @@ See [IOS_SHORTCUT_GUIDE.md](./IOS_SHORTCUT_GUIDE.md) for detailed deployment opt
 - Railway
 - Fly.io
 
+Or feel free to just use my deployed endpoint at https://wallpaper.akilr.com!
+
+Sub that URL in for whatever the iOS setup guide says (or deploy your own if you want?)
+
 ### 3. Set Up iOS Shortcut
 
 Follow the step-by-step guide in [IOS_SHORTCUT_GUIDE.md](./IOS_SHORTCUT_GUIDE.md)
