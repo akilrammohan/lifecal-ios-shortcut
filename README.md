@@ -11,11 +11,12 @@ An iOS Shortcut-powered daily wallpaper that displays your progress through the 
 
 ## Design
 
-Inspired by [Life Calendar by @waitbutwny](https://waitbutwhy.com/2014/05/life-weeks.html), adapted for a yearly view instead of lifetime view.
+Inspired by [this tweet by @luismbat](https://x.com/luismbat/status/2006002189479932247) showing a yearly progress calendar.
 
 **Visual Style:**
 - Dark gray/almost black background
 - White filled squares for completed days
+- Orange square for current day
 - Empty outlined squares for future days
 - Minimal text labels
 - iPhone-optimized dimensions
@@ -101,16 +102,17 @@ Edit `main.py` to customize:
 - ✅ Efficient caching headers
 - ✅ Clean, minimal aesthetic
 
-## Example Images
+## Example
 
-**Early in the year (Jan 15):**
-- Only 15 filled squares, rest empty
+Live calendar image (updates automatically with today's date):
 
-**Late in the year (Dec 30):**
-- 364 filled squares, 1 empty
+![Calendar Example](https://lifecal-ios-shortcut.vercel.app/calendar)
 
-**Leap year:**
-- 53 rows instead of 52 to accommodate 366 days
+The image shows:
+- **White squares**: Days that have passed
+- **Orange square**: Current day
+- **Gray outlined squares**: Future days
+- **Year text**: Bottom left corner
 
 ## License
 
@@ -118,4 +120,4 @@ MIT
 
 ## Credits
 
-Inspired by Tim Urban's [Life Calendar](https://waitbutwhy.com/2014/05/life-weeks.html) and Luis Batalha's iOS Shortcut implementation.
+Inspired by [this tweet by @luismbat](https://x.com/luismbat/status/2006002189479932247) showing a yearly calendar iOS Shortcut implementation.
