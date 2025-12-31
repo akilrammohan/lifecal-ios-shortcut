@@ -88,11 +88,9 @@ def draw_day_shape(draw: ImageDraw.Draw, x: int, y: int, size: int,
             draw.rectangle([x, y, x + size, y + size], outline=color, width=2)
 
 
-# iPhone 15 / 15 Pro dimensions with parallax compensation
-# Screen: 1179×2556, but iOS parallax zooms more horizontally than vertically
-# Width needs ~34% extra, height needs less (~8%)
-WIDTH = 1579   # 1179 + 400 for parallax width
-HEIGHT = 2756  # 2556 + 200 for parallax height (less vertical zoom)
+# iPhone 15 / 15 Pro dimensions
+WIDTH = 1179
+HEIGHT = 2556
 
 # Grid system: all measurements in multiples of 16px
 GRID_UNIT = 16

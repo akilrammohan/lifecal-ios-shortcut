@@ -15,10 +15,18 @@ from main import (
     generate_thirds_layout,
     generate_wide_layout,
     generate_months_layout,
-    parse_date
+    parse_date,
+    parse_style_config,
 )
 from io import BytesIO
 from PIL import Image
+
+
+def get_param(params: dict, key: str) -> str:
+    """Get a single query parameter value."""
+    values = params.get(key, [None])
+    return values[0] if values else None
+
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -28,8 +36,20 @@ class handler(BaseHTTPRequestHandler):
         params = parse_qs(parsed_url.query)
 
         # Get date parameter
-        date_str = params.get('date', [None])[0]
+        date_str = get_param(params, 'date')
         target_date = parse_date(date_str)
+
+        # Parse style config from query params
+        config = parse_style_config(
+            bg=get_param(params, 'bg'),
+            past=get_param(params, 'past'),
+            today=get_param(params, 'today'),
+            future=get_param(params, 'future'),
+            text=get_param(params, 'text'),
+            shape=get_param(params, 'shape'),
+            progress=get_param(params, 'progress'),
+            font=get_param(params, 'font'),
+        )
 
         # Route to appropriate layout
         layout_map = {
@@ -56,11 +76,21 @@ class handler(BaseHTTPRequestHandler):
                     "wide": "Wide grid (14 columns - two weeks side-by-side)",
                     "months": "12 months (3x4 traditional calendar grid)"
                 },
-                "usage": "GET /{layout}?date=YYYY-MM-DD (date parameter optional, defaults to today)",
+                "customization": {
+                    "bg": "Background color (6-char hex, e.g., 1a1a1a)",
+                    "past": "Past days fill color (6-char hex)",
+                    "today": "Today highlight color (6-char hex)",
+                    "future": "Future days outline color (6-char hex)",
+                    "text": "Text color (6-char hex)",
+                    "shape": "Day shape: square, circle, or rounded",
+                    "progress": "Show year progress: true or 1",
+                    "font": "Font style: sans, serif, or mono"
+                },
+                "usage": "GET /{layout}?date=YYYY-MM-DD&bg=000000&shape=circle",
                 "examples": [
                     "/standard?date=2025-12-31",
-                    "/quarters",
-                    "/months?date=2025-06-15"
+                    "/quarters?shape=circle&progress=true",
+                    "/months?bg=0a0a0a&today=ff5555&font=mono"
                 ]
             }
             self.wfile.write(json.dumps(response).encode())
@@ -69,28 +99,23 @@ class handler(BaseHTTPRequestHandler):
         # Check if path matches a layout
         if path in layout_map:
             try:
-                # Generate image
+                # Generate image with config
                 layout_func = layout_map[path]
-                img = layout_func(target_date)
+                img = layout_func(target_date, config)
 
-                # Convert to JPEG bytes (much smaller than PNG, better for iOS Shortcuts)
+                # Convert to PNG bytes
                 img_bytes = BytesIO()
-                # Convert RGBA to RGB for JPEG
-                if img.mode == 'RGBA':
-                    rgb_img = Image.new('RGB', img.size, (26, 26, 26))  # BG_COLOR
-                    rgb_img.paste(img, mask=img.split()[3] if len(img.split()) == 4 else None)
-                    img = rgb_img
-                img.save(img_bytes, format='JPEG', quality=95, optimize=True)
+                img.save(img_bytes, format='PNG', optimize=True)
                 img_bytes.seek(0)
 
                 # Send response
                 self.send_response(200)
-                self.send_header('Content-type', 'image/jpeg')
+                self.send_header('Content-type', 'image/png')
                 self.send_header('Cache-Control', 'public, max-age=86400')  # 24 hours
                 self.send_header('Content-Length', str(len(img_bytes.getvalue())))
                 layout_name = path[1:]  # Remove leading /
                 self.send_header('Content-Disposition',
-                               f'inline; filename={layout_name}_{target_date.strftime("%Y-%m-%d")}.jpg')
+                               f'inline; filename={layout_name}_{target_date.strftime("%Y-%m-%d")}.png')
                 self.end_headers()
                 self.wfile.write(img_bytes.getvalue())
             except Exception as e:
