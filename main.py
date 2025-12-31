@@ -288,23 +288,34 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
     label_width = 50
     label_spacing = GRID_UNIT  # 16px spacing between label and grid
 
-    # First, center the quarter grids (without considering labels)
-    total_grid_width = 2 * quarter_width + h_spacing
+    # Each quarter cell includes: label + spacing + grid
+    # Horizontal spacing between quarters needs to fit a label (label_width + some padding)
+    # Use enough spacing to comfortably fit the label between quarters
+    h_spacing_with_label = label_width + (2 * label_spacing)  # Label width plus padding on both sides
+
+    # Calculate total width: 2 grids + labels on left of each + spacing between
+    # Layout: [label][grid] [spacing with room for label] [label][grid]
+    total_width = 2 * quarter_width + h_spacing_with_label + 2 * (label_width + label_spacing)
     total_height = 2 * quarter_height + v_spacing
 
     available_width = WIDTH - (MARGIN_LEFT + MARGIN_RIGHT) * GRID_UNIT
 
-    # Center the grids
-    grid_start_x = MARGIN_LEFT * GRID_UNIT + (available_width - total_grid_width) // 2
+    # Center the entire construct (labels + grids + spacing)
+    construct_start_x = MARGIN_LEFT * GRID_UNIT + (available_width - total_width) // 2
     grid_bottom_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT)
     grid_start_y = grid_bottom_y - total_height
 
-    # Positions for each quarter grid (centered)
+    # First grid starts after its label
+    first_grid_x = construct_start_x + label_width + label_spacing
+    # Second grid starts after first grid + spacing
+    second_grid_x = first_grid_x + quarter_width + h_spacing_with_label
+
+    # Positions for each quarter grid
     quarter_grid_positions = [
-        (grid_start_x, grid_start_y),
-        (grid_start_x + quarter_width + h_spacing, grid_start_y),
-        (grid_start_x, grid_start_y + quarter_height + v_spacing),
-        (grid_start_x + quarter_width + h_spacing, grid_start_y + quarter_height + v_spacing),
+        (first_grid_x, grid_start_y),
+        (second_grid_x, grid_start_y),
+        (first_grid_x, grid_start_y + quarter_height + v_spacing),
+        (second_grid_x, grid_start_y + quarter_height + v_spacing),
     ]
 
     for q_idx, (q_x, q_y) in enumerate(quarter_grid_positions):
