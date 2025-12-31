@@ -15,8 +15,11 @@ from main import (
     generate_thirds_layout,
     generate_wide_layout,
     generate_months_layout,
+    generate_life_layout,
+    generate_error_image,
     parse_date,
     parse_style_config,
+    parse_birthday,
 )
 from io import BytesIO
 from PIL import Image
@@ -35,10 +38,6 @@ class handler(BaseHTTPRequestHandler):
         path = parsed_url.path
         params = parse_qs(parsed_url.query)
 
-        # Get date parameter
-        date_str = get_param(params, 'date')
-        target_date = parse_date(date_str)
-
         # Parse style config from query params
         config = parse_style_config(
             bg=get_param(params, 'bg'),
@@ -50,6 +49,65 @@ class handler(BaseHTTPRequestHandler):
             progress=get_param(params, 'progress'),
             font=get_param(params, 'font'),
         )
+
+        # Handle life calendar route separately (uses birthday, not date)
+        if path == '/life':
+            birthday_str = get_param(params, 'birthday')
+
+            try:
+                # Parse birthday
+                birthday = parse_birthday(birthday_str)
+
+                # Get current date
+                from datetime import datetime
+                current_date = datetime.now()
+
+                # Generate life calendar
+                img = generate_life_layout(birthday, current_date, config)
+
+                # Convert to PNG bytes
+                img_bytes = BytesIO()
+                img.save(img_bytes, format='PNG', optimize=True)
+                img_bytes.seek(0)
+
+                # Send response
+                self.send_response(200)
+                self.send_header('Content-type', 'image/png')
+                self.send_header('Cache-Control', 'public, max-age=604800')  # 1 week (since it updates weekly)
+                self.send_header('Content-Length', str(len(img_bytes.getvalue())))
+                self.send_header('Content-Disposition',
+                               f'inline; filename=life_calendar_{birthday.strftime("%Y-%m-%d")}.png')
+                self.end_headers()
+                self.wfile.write(img_bytes.getvalue())
+                return
+            except ValueError as e:
+                # Generate error image
+                error_msg = str(e)
+                img = generate_error_image(error_msg, config)
+
+                # Convert to PNG bytes
+                img_bytes = BytesIO()
+                img.save(img_bytes, format='PNG', optimize=True)
+                img_bytes.seek(0)
+
+                # Send error image
+                self.send_response(400)
+                self.send_header('Content-type', 'image/png')
+                self.send_header('Content-Length', str(len(img_bytes.getvalue())))
+                self.end_headers()
+                self.wfile.write(img_bytes.getvalue())
+                return
+            except Exception as e:
+                # Unexpected error
+                self.send_response(500)
+                self.send_header('Content-type', 'text/plain')
+                self.end_headers()
+                self.wfile.write(f'Error generating life calendar: {str(e)}'.encode())
+                return
+
+        # Get date parameter for yearly calendars
+        date_str = get_param(params, 'date')
+        target_date = parse_date(date_str)
 
         # Route to appropriate layout
         layout_map = {
@@ -67,30 +125,39 @@ class handler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             response = {
-                "message": "Yearly Calendar Wallpaper API",
+                "message": "Calendar Wallpaper API",
                 "layouts": {
-                    "standard": "Single column (original layout)",
-                    "split": "Two columns (year split in half)",
-                    "quarters": "Four quarters (Q1-Q4 in 2x2 grid)",
-                    "thirds": "Three columns (year divided into thirds)",
-                    "wide": "Wide grid (14 columns - two weeks side-by-side)",
-                    "months": "12 months (3x4 traditional calendar grid)"
+                    "yearly_calendars": {
+                        "standard": "Single column (original layout)",
+                        "split": "Two columns (year split in half)",
+                        "quarters": "Four quarters (Q1-Q4 in 2x2 grid)",
+                        "thirds": "Three columns (year divided into thirds)",
+                        "wide": "Wide grid (14 columns - two weeks side-by-side)",
+                        "months": "12 months (3x4 traditional calendar grid)"
+                    },
+                    "life_calendar": {
+                        "life": "Life in weeks (52 weeks × 80 years grid, each cell = 1 week)"
+                    }
                 },
                 "customization": {
                     "bg": "Background color (6-char hex, e.g., 1a1a1a)",
-                    "past": "Past days fill color (6-char hex)",
-                    "today": "Today highlight color (6-char hex)",
-                    "future": "Future days outline color (6-char hex)",
+                    "past": "Past days/weeks fill color (6-char hex)",
+                    "today": "Today/current week highlight color (6-char hex)",
+                    "future": "Future days/weeks outline color (6-char hex)",
                     "text": "Text color (6-char hex)",
-                    "shape": "Day shape: square, circle, or rounded",
-                    "progress": "Show year progress: true or 1",
+                    "shape": "Indicator shape: square, circle, or rounded",
+                    "progress": "Show progress: true or 1 (yearly: %, life: % to 80)",
                     "font": "Font style: sans, serif, or mono"
                 },
-                "usage": "GET /{layout}?date=YYYY-MM-DD&bg=000000&shape=circle",
+                "usage": {
+                    "yearly": "GET /{layout}?date=YYYY-MM-DD&bg=000000&shape=circle",
+                    "life": "GET /life?birthday=YYYY-MM-DD&bg=000000&shape=circle&progress=true"
+                },
                 "examples": [
                     "/standard?date=2025-12-31",
                     "/quarters?shape=circle&progress=true",
-                    "/months?bg=0a0a0a&today=ff5555&font=mono"
+                    "/months?bg=0a0a0a&today=ff5555&font=mono",
+                    "/life?birthday=1990-01-15&progress=true&shape=circle"
                 ]
             }
             self.wfile.write(json.dumps(response).encode())
@@ -128,4 +195,4 @@ class handler(BaseHTTPRequestHandler):
             self.send_response(404)
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
-            self.wfile.write(b'Not found. Try /, /standard, /split, /quarters, /thirds, /wide, or /months')
+            self.wfile.write(b'Not found. Try /, /standard, /split, /quarters, /thirds, /wide, /months, or /life')

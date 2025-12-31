@@ -188,6 +188,277 @@ def get_days_in_year(year: int) -> int:
     return 366 if is_leap_year(year) else 365
 
 
+def parse_birthday(birthday_str: str) -> datetime:
+    """
+    Parse birthday string in YYYY-MM-DD format.
+
+    Args:
+        birthday_str: Date string in YYYY-MM-DD format
+
+    Returns:
+        datetime object
+
+    Raises:
+        ValueError: If format is invalid or date is invalid
+    """
+    if not birthday_str:
+        raise ValueError("Birthday parameter is required")
+
+    # Try to parse YYYY-MM-DD format
+    try:
+        birthday = datetime.strptime(birthday_str, '%Y-%m-%d')
+    except ValueError:
+        raise ValueError(f"Invalid birthday format. Expected YYYY-MM-DD, got: {birthday_str}")
+
+    # Check if birthday is in the future
+    if birthday > datetime.now():
+        raise ValueError(f"Birthday cannot be in the future: {birthday_str}")
+
+    return birthday
+
+
+def get_week_start(date: datetime) -> datetime:
+    """
+    Get the Sunday that starts the week containing the given date.
+
+    Args:
+        date: Any date
+
+    Returns:
+        datetime object for the Sunday of that week (at midnight)
+    """
+    # weekday(): Monday=0, Sunday=6
+    # We want Sunday=0, so we add 1 and modulo 7
+    days_since_sunday = (date.weekday() + 1) % 7
+    week_start = date - timedelta(days=days_since_sunday)
+    return week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def calculate_life_weeks(birthday: datetime, current_date: datetime) -> tuple:
+    """
+    Calculate week-of-life information for life calendar.
+
+    Args:
+        birthday: Date of birth
+        current_date: Current date to calculate from
+
+    Returns:
+        Tuple of (total_weeks, current_week_index, is_current_week_complete, age_years)
+        - total_weeks: Total weeks lived (complete + current)
+        - current_week_index: 0-based index of current week
+        - is_current_week_complete: True if current week is fully past
+        - age_years: Age in years (fractional)
+    """
+    # Get the week start for birthday and current date
+    birth_week_start = get_week_start(birthday)
+    current_week_start = get_week_start(current_date)
+
+    # Calculate total complete weeks between birth week start and current week start
+    days_diff = (current_week_start - birth_week_start).days
+    weeks_lived = days_diff // 7
+
+    # Check if current week is complete
+    # Current week ends on Saturday (6 days after Sunday start)
+    current_week_end = current_week_start + timedelta(days=6)
+    is_current_week_complete = current_date > current_week_end
+
+    # If current week is not complete, we're still in it
+    # If complete, we've moved to the next week
+    current_week_index = weeks_lived
+
+    # Calculate age in years (for display)
+    age_years = (current_date - birthday).days / 365.25
+
+    return weeks_lived, current_week_index, is_current_week_complete, age_years
+
+
+def generate_error_image(error_message: str, config: StyleConfig = None) -> Image.Image:
+    """
+    Generate an error image with a message.
+
+    Args:
+        error_message: Error message to display
+        config: Style configuration (optional)
+
+    Returns:
+        PIL Image object
+    """
+    if config is None:
+        config = StyleConfig()
+
+    # Create image with background
+    img = Image.new('RGB', (WIDTH, HEIGHT), config.bg_color)
+    draw = ImageDraw.Draw(img)
+
+    # Load font for error message
+    try:
+        font = get_font(32, config.font)
+        title_font = get_font(48, config.font)
+    except:
+        font = ImageFont.load_default()
+        title_font = ImageFont.load_default()
+
+    # Draw error title
+    title = "Error"
+    title_bbox = draw.textbbox((0, 0), title, font=title_font)
+    title_width = title_bbox[2] - title_bbox[0]
+    title_x = (WIDTH - title_width) // 2
+    title_y = HEIGHT // 2 - 100
+    draw.text((title_x, title_y), title, fill=config.today_color, font=title_font)
+
+    # Draw error message (word wrap)
+    max_width = WIDTH - 128  # Leave margins
+    words = error_message.split()
+    lines = []
+    current_line = []
+
+    for word in words:
+        test_line = ' '.join(current_line + [word])
+        bbox = draw.textbbox((0, 0), test_line, font=font)
+        if bbox[2] - bbox[0] <= max_width:
+            current_line.append(word)
+        else:
+            if current_line:
+                lines.append(' '.join(current_line))
+            current_line = [word]
+    if current_line:
+        lines.append(' '.join(current_line))
+
+    # Draw wrapped text
+    y = title_y + 80
+    for line in lines:
+        bbox = draw.textbbox((0, 0), line, font=font)
+        line_width = bbox[2] - bbox[0]
+        x = (WIDTH - line_width) // 2
+        draw.text((x, y), line, fill=config.text_color, font=font)
+        y += 40
+
+    return img
+
+
+def generate_life_layout(birthday: datetime, current_date: datetime, config: StyleConfig = None) -> Image.Image:
+    """
+    Generate life calendar wallpaper (80 years x 52 weeks grid).
+    Each cell represents one week of life.
+
+    Args:
+        birthday: Date of birth
+        current_date: Current date (for calculating progress)
+        config: Style configuration
+
+    Returns:
+        PIL Image object
+    """
+    if config is None:
+        config = StyleConfig()
+
+    # Calculate life weeks
+    weeks_lived, current_week_index, is_current_week_complete, age_years = calculate_life_weeks(birthday, current_date)
+
+    # Grid configuration
+    WEEKS_PER_YEAR = 52
+    BASE_YEARS = 80
+
+    # Calculate how many years we need to display
+    # If person is older than 80, extend the grid
+    years_to_display = max(BASE_YEARS, math.ceil(age_years) + 1)
+
+    # Calculate total weeks to display
+    total_weeks = years_to_display * WEEKS_PER_YEAR
+
+    # Grid dimensions: 52 columns (weeks) x years_to_display rows (years)
+    cols = WEEKS_PER_YEAR
+    rows = years_to_display
+
+    # Calculate cell and gap sizes to fit the screen
+    # Available space after margins
+    margin_left_px = MARGIN_LEFT * GRID_UNIT
+    margin_right_px = MARGIN_RIGHT * GRID_UNIT
+    margin_top_px = MARGIN_TOP * GRID_UNIT
+    margin_bottom_px = MARGIN_BOTTOM * GRID_UNIT
+
+    available_width = WIDTH - margin_left_px - margin_right_px
+    available_height = HEIGHT - margin_top_px - margin_bottom_px
+
+    # Reserve space for progress text if enabled
+    progress_text_height = 60 if config.show_progress else 0
+    available_height -= progress_text_height
+
+    # Calculate cell size and gap
+    # We want: cols * cell_size + (cols - 1) * gap = available_width
+    # Let's use gap = cell_size * 0.8 for good spacing
+    # cols * cell + (cols - 1) * cell * 0.8 = available_width
+    # cell * (cols + (cols - 1) * 0.8) = available_width
+    cell_size_width = available_width / (cols + (cols - 1) * 0.8)
+    cell_size_height = available_height / (rows + (rows - 1) * 0.8)
+
+    # Use the smaller dimension to ensure it fits
+    cell_size = min(cell_size_width, cell_size_height)
+    cell_size = int(cell_size)
+    gap = int(cell_size * 0.8)
+
+    # Ensure minimum size
+    if cell_size < 4:
+        cell_size = 4
+        gap = 3
+
+    # Calculate actual grid dimensions
+    grid_width = cols * cell_size + (cols - 1) * gap
+    grid_height = rows * cell_size + (rows - 1) * gap
+
+    # Center the grid
+    start_x = margin_left_px + (available_width - grid_width) // 2
+    start_y = margin_top_px + (available_height - grid_height) // 2
+
+    # Create image
+    img = Image.new('RGB', (WIDTH, HEIGHT), config.bg_color)
+    draw = ImageDraw.Draw(img)
+
+    # Draw the grid
+    for week_index in range(total_weeks):
+        col = week_index % cols
+        row = week_index // cols
+
+        x = start_x + col * (cell_size + gap)
+        y = start_y + row * (cell_size + gap)
+
+        # Determine the state of this week
+        if week_index < current_week_index:
+            # Past week - fill with past color
+            draw_day_shape(draw, x, y, cell_size, config.past_color, config.shape, fill=True)
+        elif week_index == current_week_index:
+            # Current week
+            if is_current_week_complete:
+                # Week is complete - fill with past color
+                draw_day_shape(draw, x, y, cell_size, config.past_color, config.shape, fill=True)
+            else:
+                # Week in progress - outline with today color
+                draw_day_shape(draw, x, y, cell_size, config.today_color, config.shape, fill=False)
+        else:
+            # Future week - outline with future color
+            draw_day_shape(draw, x, y, cell_size, config.future_color, config.shape, fill=False)
+
+    # Draw progress text if enabled
+    if config.show_progress:
+        # Calculate percentage to 80 years
+        percent_to_80 = (age_years / 80.0) * 100
+        progress_text = f"{percent_to_80:.1f}% to 80"
+
+        try:
+            font = get_font(40, config.font)
+        except:
+            font = ImageFont.load_default()
+
+        bbox = draw.textbbox((0, 0), progress_text, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_x = (WIDTH - text_width) // 2
+        text_y = start_y + grid_height + 20
+
+        draw.text((text_x, text_y), progress_text, fill=config.text_color, font=font)
+
+    return img
+
+
 def generate_standard_layout(target_date: datetime, config: StyleConfig = None) -> Image.Image:
     """
     Generate standard single-column yearly calendar wallpaper.
