@@ -519,7 +519,7 @@ def generate_standard_layout(target_date: datetime, config: StyleConfig = None) 
                 if day_counter < day_of_year:
                     draw_day_shape(draw, x, y, square_size, config.past_color, config.shape, fill=True)
                 elif day_counter == day_of_year:
-                    draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=True)
+                    draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=False)
                 else:
                     draw_day_shape(draw, x, y, square_size, config.future_color, config.shape, fill=False)
 
@@ -609,7 +609,7 @@ def generate_split_layout(target_date: datetime, config: StyleConfig = None) -> 
                 if day_counter < day_of_year:
                     draw_day_shape(draw, x, y, square_size, config.past_color, config.shape, fill=True)
                 elif day_counter == day_of_year:
-                    draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=True)
+                    draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=False)
                 else:
                     draw_day_shape(draw, x, y, square_size, config.future_color, config.shape, fill=False)
 
@@ -633,7 +633,7 @@ def generate_split_layout(target_date: datetime, config: StyleConfig = None) -> 
                 if day_counter < day_of_year:
                     draw_day_shape(draw, x, y, square_size, config.past_color, config.shape, fill=True)
                 elif day_counter == day_of_year:
-                    draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=True)
+                    draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=False)
                 else:
                     draw_day_shape(draw, x, y, square_size, config.future_color, config.shape, fill=False)
 
@@ -786,7 +786,7 @@ def generate_quarters_layout(target_date: datetime, config: StyleConfig = None) 
                     if actual_day_of_year < day_of_year:
                         draw_day_shape(draw, x, y, square_size, config.past_color, config.shape, fill=True)
                     elif actual_day_of_year == day_of_year:
-                        draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=True)
+                        draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=False)
                     else:
                         draw_day_shape(draw, x, y, square_size, config.future_color, config.shape, fill=False)
 
@@ -883,7 +883,7 @@ def generate_thirds_layout(target_date: datetime, config: StyleConfig = None) ->
                     if day_counter < day_of_year:
                         draw_day_shape(draw, x, y, square_size, config.past_color, config.shape, fill=True)
                     elif day_counter == day_of_year:
-                        draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=True)
+                        draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=False)
                     else:
                         draw_day_shape(draw, x, y, square_size, config.future_color, config.shape, fill=False)
 
@@ -970,7 +970,7 @@ def generate_wide_layout(target_date: datetime, config: StyleConfig = None) -> I
                 if day_counter < day_of_year:
                     draw_day_shape(draw, x, y, square_size, config.past_color, config.shape, fill=True)
                 elif day_counter == day_of_year:
-                    draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=True)
+                    draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=False)
                 else:
                     draw_day_shape(draw, x, y, square_size, config.future_color, config.shape, fill=False)
 
@@ -1079,7 +1079,7 @@ def generate_months_layout(target_date: datetime, config: StyleConfig = None) ->
                 if day_counter < day_of_year:
                     draw_day_shape(draw, x, y, square_size, config.past_color, config.shape, fill=True)
                 elif day_counter == day_of_year:
-                    draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=True)
+                    draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=False)
                 else:
                     draw_day_shape(draw, x, y, square_size, config.future_color, config.shape, fill=False)
 
