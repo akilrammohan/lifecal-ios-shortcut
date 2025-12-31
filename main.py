@@ -89,10 +89,10 @@ def draw_day_shape(draw: ImageDraw.Draw, x: int, y: int, size: int,
 
 
 # iPhone 15 / 15 Pro dimensions with parallax compensation
-# Screen: 1179×2556, but iOS parallax zooms ~34% width, ~16% height
-# Add 200px per side (400px total) to prevent iOS from cropping/zooming our layout
-WIDTH = 1579   # 1179 + 400 for parallax
-HEIGHT = 2956  # 2556 + 400 for parallax
+# Screen: 1179×2556, but iOS parallax zooms more horizontally than vertically
+# Width needs ~34% extra, height needs less (~8%)
+WIDTH = 1579   # 1179 + 400 for parallax width
+HEIGHT = 2756  # 2556 + 200 for parallax height (less vertical zoom)
 
 # Grid system: all measurements in multiples of 16px
 GRID_UNIT = 16
@@ -643,10 +643,13 @@ def generate_thirds_layout(target_date: datetime, config: StyleConfig = None) ->
     return img
 
 
-def generate_wide_layout(target_date: datetime) -> Image.Image:
+def generate_wide_layout(target_date: datetime, config: StyleConfig = None) -> Image.Image:
     """
     Generate wide grid layout (14 columns - two weeks side-by-side).
     """
+    if config is None:
+        config = StyleConfig()
+
     year = target_date.year
     day_of_year = target_date.timetuple().tm_yday
     total_days = get_days_in_year(year)
@@ -655,7 +658,7 @@ def generate_wide_layout(target_date: datetime) -> Image.Image:
     jan_1_weekday = (jan_1.weekday() + 1) % 7
     total_cells = jan_1_weekday + total_days
 
-    img = Image.new('RGB', (WIDTH, HEIGHT), color=BG_COLOR)
+    img = Image.new('RGB', (WIDTH, HEIGHT), color=config.bg_color)
     draw = ImageDraw.Draw(img)
 
     SQUARE_UNITS = 1
@@ -669,7 +672,7 @@ def generate_wide_layout(target_date: datetime) -> Image.Image:
     grid_width = (cols * square_size) + ((cols - 1) * gap_size)
     grid_height = (rows * square_size) + ((rows - 1) * gap_size)
 
-    year_font = get_font(42)
+    year_font = get_font(42, config.font)
     year_text_height = 50
     year_padding = GRID_UNIT * 2
 
@@ -696,11 +699,11 @@ def generate_wide_layout(target_date: datetime) -> Image.Image:
             else:
                 day_counter += 1
                 if day_counter < day_of_year:
-                    draw.rectangle([x, y, x + square_size, y + square_size], fill=PAST_DAY_COLOR)
+                    draw_day_shape(draw, x, y, square_size, config.past_color, config.shape, fill=True)
                 elif day_counter == day_of_year:
-                    draw.rectangle([x, y, x + square_size, y + square_size], fill=TODAY_COLOR)
+                    draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=True)
                 else:
-                    draw.rectangle([x, y, x + square_size, y + square_size], outline=FUTURE_DAY_COLOR, width=2)
+                    draw_day_shape(draw, x, y, square_size, config.future_color, config.shape, fill=False)
 
             cell_counter += 1
 
@@ -710,19 +713,34 @@ def generate_wide_layout(target_date: datetime) -> Image.Image:
     year_text_width = bbox[2] - bbox[0]
     year_x = (WIDTH - year_text_width) // 2
     year_y = start_y + grid_height + year_padding
-    draw.text((year_x, year_y), year_text, fill=TEXT_COLOR, font=year_font)
+    draw.text((year_x, year_y), year_text, fill=config.text_color, font=year_font)
+
+    # Draw progress text if enabled
+    if config.show_progress:
+        progress_pct = int((day_of_year / total_days) * 100)
+        progress_text = f"{progress_pct}%"
+        progress_font = get_font(28, config.font)
+        bbox = draw.textbbox((0, 0), progress_text, font=progress_font)
+        progress_width = bbox[2] - bbox[0]
+        progress_x = (WIDTH - progress_width) // 2
+        progress_y = year_y + year_text_height + GRID_UNIT
+        draw.text((progress_x, progress_y), progress_text, fill=config.text_color, font=progress_font)
 
     return img
 
 
-def generate_months_layout(target_date: datetime) -> Image.Image:
+def generate_months_layout(target_date: datetime, config: StyleConfig = None) -> Image.Image:
     """
     Generate 12-month grid layout (3x4 traditional calendar).
     """
+    if config is None:
+        config = StyleConfig()
+
     year = target_date.year
     day_of_year = target_date.timetuple().tm_yday
+    total_days = get_days_in_year(year)
 
-    img = Image.new('RGB', (WIDTH, HEIGHT), color=BG_COLOR)
+    img = Image.new('RGB', (WIDTH, HEIGHT), color=config.bg_color)
     draw = ImageDraw.Draw(img)
 
     SQUARE_UNITS = 1
@@ -745,8 +763,8 @@ def generate_months_layout(target_date: datetime) -> Image.Image:
     total_width = (month_grid_cols * month_width) + ((month_grid_cols - 1) * month_h_spacing)
     total_height = (month_grid_rows * month_height) + ((month_grid_rows - 1) * month_v_spacing)
 
-    month_font = get_font(32)
-    year_font = get_font(42)
+    month_font = get_font(32, config.font)
+    year_font = get_font(42, config.font)
     year_text_height = 50
     year_padding = GRID_UNIT * 2
 
@@ -771,7 +789,7 @@ def generate_months_layout(target_date: datetime) -> Image.Image:
         month_start_weekday = (month_start.weekday() + 1) % 7
 
         month_name = month_start.strftime("%b")
-        draw.text((month_x, month_y - 45), month_name, fill=TEXT_COLOR, font=month_font)
+        draw.text((month_x, month_y - 45), month_name, fill=config.text_color, font=month_font)
 
         cell_counter = 0
         for week in range(max_month_rows):
@@ -790,11 +808,11 @@ def generate_months_layout(target_date: datetime) -> Image.Image:
                 day_counter += 1
 
                 if day_counter < day_of_year:
-                    draw.rectangle([x, y, x + square_size, y + square_size], fill=PAST_DAY_COLOR)
+                    draw_day_shape(draw, x, y, square_size, config.past_color, config.shape, fill=True)
                 elif day_counter == day_of_year:
-                    draw.rectangle([x, y, x + square_size, y + square_size], fill=TODAY_COLOR)
+                    draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=True)
                 else:
-                    draw.rectangle([x, y, x + square_size, y + square_size], outline=FUTURE_DAY_COLOR, width=2)
+                    draw_day_shape(draw, x, y, square_size, config.future_color, config.shape, fill=False)
 
                 cell_counter += 1
 
@@ -804,7 +822,18 @@ def generate_months_layout(target_date: datetime) -> Image.Image:
     year_text_width = bbox[2] - bbox[0]
     year_x = (WIDTH - year_text_width) // 2
     year_y = grid_start_y + total_height + year_padding
-    draw.text((year_x, year_y), year_text, fill=TEXT_COLOR, font=year_font)
+    draw.text((year_x, year_y), year_text, fill=config.text_color, font=year_font)
+
+    # Draw progress text if enabled
+    if config.show_progress:
+        progress_pct = int((day_of_year / total_days) * 100)
+        progress_text = f"{progress_pct}%"
+        progress_font = get_font(28, config.font)
+        bbox = draw.textbbox((0, 0), progress_text, font=progress_font)
+        progress_width = bbox[2] - bbox[0]
+        progress_x = (WIDTH - progress_width) // 2
+        progress_y = year_y + year_text_height + GRID_UNIT
+        draw.text((progress_x, progress_y), progress_text, fill=config.text_color, font=progress_font)
 
     return img
 
