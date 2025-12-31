@@ -8,6 +8,18 @@ An iOS Shortcut-powered daily wallpaper that displays your progress through the 
 - Automatically fills in squares for days that have passed
 - Updates your iPhone lock screen wallpaper every morning
 - Displays the current year in the bottom left corner
+- **6 different layout styles** to choose from
+
+## Layout Styles
+
+Choose from 6 different layouts to customize your wallpaper:
+
+1. **Standard** (`/standard`) - Single column layout with all days in one vertical grid
+2. **Split** (`/split`) - Two-column layout with the year split into two halves
+3. **Quarters** (`/quarters`) - Four quarters (Q1-Q4) in a 2×2 grid with labels on the left
+4. **Thirds** (`/thirds`) - Three-column layout dividing the year into thirds
+5. **Wide** (`/wide`) - Wide grid layout with 14 columns (two weeks side-by-side)
+6. **Months** (`/months`) - Traditional 12-month calendar in a 3×4 grid
 
 ## Design
 
@@ -18,8 +30,8 @@ Inspired by [this tweet by @luismbat](https://x.com/luismbat/status/200600218947
 - White filled squares for completed days
 - Orange square for current day
 - Empty outlined squares for future days
-- Minimal text labels
-- iPhone-optimized dimensions
+- Minimal text labels (32px for labels, 42px for year)
+- iPhone-optimized dimensions (1179×2556px)
 
 ## How It Works
 
@@ -36,7 +48,7 @@ Inspired by [this tweet by @luismbat](https://x.com/luismbat/status/200600218947
 uv run uvicorn main:app --reload
 
 # Visit in browser
-open http://localhost:8000/calendar
+open http://localhost:8000/standard
 ```
 
 ### 2. Deploy to Production
@@ -76,37 +88,39 @@ All managed via `uv` package manager.
 ## API Endpoints
 
 **GET /**
-- Returns API info and usage instructions
+- Returns API info and available layouts
 
-**GET /calendar**
+**GET /{layout}**
+- Layouts: `standard`, `split`, `quarters`, `thirds`, `wide`, `months`
 - Query params: `date` (optional, format: YYYY-MM-DD)
-- Returns: PNG image (1170×2532px by default)
-- Example: `/calendar?date=2025-12-30`
+- Returns: PNG image (1179×2556px)
+- Example: `/quarters?date=2025-12-30`
 
 If no date is provided, uses current date.
 
 ## Customization
 
 Edit `main.py` to customize:
-- Image dimensions (lines 33-34)
-- Colors (lines 37-40)
-- Grid size (lines 52-53)
-- Text labels (lines 76-77)
+- Image dimensions (WIDTH, HEIGHT constants)
+- Colors (BG_COLOR, PAST_DAY_COLOR, TODAY_COLOR, etc.)
+- Grid size and spacing (GRID_UNIT, MARGIN constants)
+- Font sizes (get_font() calls)
 
 ## Features
 
+- ✅ 6 different layout styles (standard, split, quarters, thirds, wide, months)
 - ✅ Handles leap years automatically (366 days)
 - ✅ Dynamic image generation (no pre-rendered images needed)
 - ✅ Year display in bottom left
-- ✅ iPhone wallpaper optimized dimensions
+- ✅ iPhone wallpaper optimized dimensions (1179×2556px)
 - ✅ Efficient caching headers
 - ✅ Clean, minimal aesthetic
 
 ## Example
 
-Live calendar image (updates automatically with today's date):
+<img src="https://wallpaper.akilr.com/standard" alt="Calendar Example" width="300">
 
-![Calendar Example](https://wallpaper.akilr.com/calendar)
+Live calendar image showing the standard layout (updates automatically with today's date).
 
 The image shows:
 - **White squares**: Days that have passed
