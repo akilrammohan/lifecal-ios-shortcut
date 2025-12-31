@@ -1,12 +1,98 @@
 from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime, timedelta
+from dataclasses import dataclass
 import calendar
 import math
 import os
+import re
 
-# iPhone 15 / 15 Pro dimensions
-WIDTH = 1179
-HEIGHT = 2556
+
+@dataclass
+class StyleConfig:
+    """Configuration for calendar styling."""
+    bg_color: str = '#1a1a1a'
+    past_color: str = '#ffffff'
+    today_color: str = '#F56B3F'
+    future_color: str = '#404040'
+    text_color: str = '#ffffff'
+    shape: str = 'square'  # square, circle, rounded
+    show_progress: bool = False
+    font: str = 'sans'  # sans, serif, mono
+
+
+def validate_hex_color(color: str, default: str) -> str:
+    """Validate a hex color string (without #) and return with # prefix."""
+    if color and re.match(r'^[0-9a-fA-F]{6}$', color):
+        return f'#{color}'
+    return default
+
+
+def parse_style_config(
+    bg: str = None,
+    past: str = None,
+    today: str = None,
+    future: str = None,
+    text: str = None,
+    shape: str = None,
+    progress: str = None,
+    font: str = None,
+) -> StyleConfig:
+    """Parse URL parameters into a StyleConfig."""
+    config = StyleConfig()
+
+    # Validate and apply colors
+    if bg:
+        config.bg_color = validate_hex_color(bg, config.bg_color)
+    if past:
+        config.past_color = validate_hex_color(past, config.past_color)
+    if today:
+        config.today_color = validate_hex_color(today, config.today_color)
+    if future:
+        config.future_color = validate_hex_color(future, config.future_color)
+    if text:
+        config.text_color = validate_hex_color(text, config.text_color)
+
+    # Validate shape
+    if shape and shape.lower() in ('square', 'circle', 'rounded'):
+        config.shape = shape.lower()
+
+    # Parse progress flag
+    if progress and progress.lower() in ('true', '1', 'yes'):
+        config.show_progress = True
+
+    # Validate font
+    if font and font.lower() in ('sans', 'serif', 'mono'):
+        config.font = font.lower()
+
+    return config
+
+
+def draw_day_shape(draw: ImageDraw.Draw, x: int, y: int, size: int,
+                   color: str, shape: str, fill: bool = True) -> None:
+    """Draw a day indicator shape (square, circle, or rounded)."""
+    if shape == 'circle':
+        if fill:
+            draw.ellipse([x, y, x + size, y + size], fill=color)
+        else:
+            draw.ellipse([x, y, x + size, y + size], outline=color, width=2)
+    elif shape == 'rounded':
+        radius = size // 4  # 25% corner radius
+        if fill:
+            draw.rounded_rectangle([x, y, x + size, y + size], radius=radius, fill=color)
+        else:
+            draw.rounded_rectangle([x, y, x + size, y + size], radius=radius, outline=color, width=2)
+    else:  # square (default)
+        if fill:
+            draw.rectangle([x, y, x + size, y + size], fill=color)
+        else:
+            draw.rectangle([x, y, x + size, y + size], outline=color, width=2)
+
+
+# iPhone 15 / 15 Pro dimensions with parallax compensation
+# Screen: 1179×2556, but iOS parallax zooms ~34% width, ~16% height
+# Add 200px per side (400px total) to prevent iOS from cropping/zooming our layout
+WIDTH = 1579   # 1179 + 400 for parallax
+HEIGHT = 2956  # 2556 + 400 for parallax
 
 # Grid system: all measurements in multiples of 16px
 GRID_UNIT = 16
@@ -14,7 +100,7 @@ GRID_UNIT = 16
 # Margins (in grid units)
 MARGIN_LEFT = 4     # 64px
 MARGIN_RIGHT = 4    # 64px
-MARGIN_TOP = 50     # 800px (large padding below time text to center grid in lower half)
+MARGIN_TOP = 30     # 480px (space for iOS time/date, adjusted for parallax-sized image)
 MARGIN_BOTTOM = 8   # 128px
 
 # Colors
@@ -25,27 +111,57 @@ FUTURE_DAY_COLOR = '#404040'
 TEXT_COLOR = '#ffffff'
 
 
-def get_font(size: int) -> ImageFont.FreeTypeFont:
+def get_font(size: int, font_style: str = 'sans') -> ImageFont.FreeTypeFont:
     """
     Try to load a TrueType font from bundled font or common system locations.
+
+    Args:
+        size: Font size in pixels
+        font_style: One of 'sans', 'serif', or 'mono'
     """
     # Get the directory where this script is located
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
+    # Font file mappings for each style
+    font_files = {
+        'sans': ['DejaVuSans.ttf', 'DejaVuSans.ttf'],
+        'serif': ['DejaVuSerif.ttf', 'DejaVuSerif.ttf'],
+        'mono': ['DejaVuSansMono.ttf', 'DejaVuSansMono.ttf'],
+    }
+
+    # Get the font file for the requested style (default to sans)
+    font_file = font_files.get(font_style, font_files['sans'])[0]
+
     font_paths = [
         # Bundled font (ships with the project)
-        os.path.join(script_dir, "DejaVuSans.ttf"),
+        os.path.join(script_dir, font_file),
         # Linux (Vercel, Ubuntu, Debian)
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        # macOS
-        "/System/Library/Fonts/Helvetica.ttc",
-        "/Library/Fonts/Arial.ttf",
-        # Windows
-        "C:\\Windows\\Fonts\\Arial.ttf",
-        "C:\\Windows\\Fonts\\arial.ttf",
+        f"/usr/share/fonts/truetype/dejavu/{font_file}",
+        f"/usr/share/fonts/dejavu/{font_file}",
     ]
+
+    # Add fallbacks for each style
+    if font_style == 'sans':
+        font_paths.extend([
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/System/Library/Fonts/Helvetica.ttc",
+            "/Library/Fonts/Arial.ttf",
+            "C:\\Windows\\Fonts\\Arial.ttf",
+        ])
+    elif font_style == 'serif':
+        font_paths.extend([
+            "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+            "/System/Library/Fonts/Times.ttc",
+            "/Library/Fonts/Times New Roman.ttf",
+            "C:\\Windows\\Fonts\\times.ttf",
+        ])
+    elif font_style == 'mono':
+        font_paths.extend([
+            "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+            "/System/Library/Fonts/Courier.ttc",
+            "/Library/Fonts/Courier New.ttf",
+            "C:\\Windows\\Fonts\\cour.ttf",
+        ])
 
     for font_path in font_paths:
         if os.path.exists(font_path):
@@ -53,6 +169,10 @@ def get_font(size: int) -> ImageFont.FreeTypeFont:
                 return ImageFont.truetype(font_path, size)
             except:
                 continue
+
+    # If no font found for the style, try sans as ultimate fallback
+    if font_style != 'sans':
+        return get_font(size, 'sans')
 
     # If no font found, raise an error with helpful message
     raise RuntimeError(
@@ -70,10 +190,13 @@ def get_days_in_year(year: int) -> int:
     return 366 if is_leap_year(year) else 365
 
 
-def generate_standard_layout(target_date: datetime) -> Image.Image:
+def generate_standard_layout(target_date: datetime, config: StyleConfig = None) -> Image.Image:
     """
     Generate standard single-column yearly calendar wallpaper.
     """
+    if config is None:
+        config = StyleConfig()
+
     year = target_date.year
     day_of_year = target_date.timetuple().tm_yday
     total_days = get_days_in_year(year)
@@ -82,7 +205,7 @@ def generate_standard_layout(target_date: datetime) -> Image.Image:
     jan_1_weekday = (jan_1.weekday() + 1) % 7
     total_cells = jan_1_weekday + total_days
 
-    img = Image.new('RGB', (WIDTH, HEIGHT), color=BG_COLOR)
+    img = Image.new('RGB', (WIDTH, HEIGHT), color=config.bg_color)
     draw = ImageDraw.Draw(img)
 
     SQUARE_UNITS = 1
@@ -96,7 +219,7 @@ def generate_standard_layout(target_date: datetime) -> Image.Image:
     grid_width = (cols * square_size) + ((cols - 1) * gap_size)
     grid_height = (rows * square_size) + ((rows - 1) * gap_size)
 
-    year_font = get_font(42)
+    year_font = get_font(42, config.font)
     year_text_height = 50  # Approximate height for 42px font
     year_padding = GRID_UNIT * 2  # 32px padding below grid
 
@@ -125,11 +248,11 @@ def generate_standard_layout(target_date: datetime) -> Image.Image:
                 day_counter += 1
 
                 if day_counter < day_of_year:
-                    draw.rectangle([x, y, x + square_size, y + square_size], fill=PAST_DAY_COLOR)
+                    draw_day_shape(draw, x, y, square_size, config.past_color, config.shape, fill=True)
                 elif day_counter == day_of_year:
-                    draw.rectangle([x, y, x + square_size, y + square_size], fill=TODAY_COLOR)
+                    draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=True)
                 else:
-                    draw.rectangle([x, y, x + square_size, y + square_size], outline=FUTURE_DAY_COLOR, width=2)
+                    draw_day_shape(draw, x, y, square_size, config.future_color, config.shape, fill=False)
 
             cell_counter += 1
 
@@ -139,15 +262,29 @@ def generate_standard_layout(target_date: datetime) -> Image.Image:
     year_text_width = bbox[2] - bbox[0]
     year_x = (WIDTH - year_text_width) // 2  # Center horizontally
     year_y = start_y + grid_height + year_padding
-    draw.text((year_x, year_y), year_text, fill=TEXT_COLOR, font=year_font)
+    draw.text((year_x, year_y), year_text, fill=config.text_color, font=year_font)
+
+    # Draw progress text if enabled
+    if config.show_progress:
+        progress_pct = int((day_of_year / total_days) * 100)
+        progress_text = f"{progress_pct}%"
+        progress_font = get_font(28, config.font)
+        bbox = draw.textbbox((0, 0), progress_text, font=progress_font)
+        progress_width = bbox[2] - bbox[0]
+        progress_x = (WIDTH - progress_width) // 2
+        progress_y = year_y + year_text_height + GRID_UNIT
+        draw.text((progress_x, progress_y), progress_text, fill=config.text_color, font=progress_font)
 
     return img
 
 
-def generate_split_layout(target_date: datetime) -> Image.Image:
+def generate_split_layout(target_date: datetime, config: StyleConfig = None) -> Image.Image:
     """
     Generate two-column layout (year split into two halves).
     """
+    if config is None:
+        config = StyleConfig()
+
     year = target_date.year
     day_of_year = target_date.timetuple().tm_yday
     total_days = get_days_in_year(year)
@@ -156,7 +293,7 @@ def generate_split_layout(target_date: datetime) -> Image.Image:
     jan_1_weekday = (jan_1.weekday() + 1) % 7
     total_cells = jan_1_weekday + total_days
 
-    img = Image.new('RGB', (WIDTH, HEIGHT), color=BG_COLOR)
+    img = Image.new('RGB', (WIDTH, HEIGHT), color=config.bg_color)
     draw = ImageDraw.Draw(img)
 
     SQUARE_UNITS = 1
@@ -171,7 +308,7 @@ def generate_split_layout(target_date: datetime) -> Image.Image:
     grid_width = (cols * square_size) + ((cols - 1) * gap_size)
     grid_height = (rows_per_half * square_size) + ((rows_per_half - 1) * gap_size)
 
-    year_font = get_font(42)
+    year_font = get_font(42, config.font)
     year_text_height = 50
     year_padding = GRID_UNIT * 2
 
@@ -201,11 +338,11 @@ def generate_split_layout(target_date: datetime) -> Image.Image:
             else:
                 day_counter += 1
                 if day_counter < day_of_year:
-                    draw.rectangle([x, y, x + square_size, y + square_size], fill=PAST_DAY_COLOR)
+                    draw_day_shape(draw, x, y, square_size, config.past_color, config.shape, fill=True)
                 elif day_counter == day_of_year:
-                    draw.rectangle([x, y, x + square_size, y + square_size], fill=TODAY_COLOR)
+                    draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=True)
                 else:
-                    draw.rectangle([x, y, x + square_size, y + square_size], outline=FUTURE_DAY_COLOR, width=2)
+                    draw_day_shape(draw, x, y, square_size, config.future_color, config.shape, fill=False)
 
             cell_counter += 1
 
@@ -225,11 +362,11 @@ def generate_split_layout(target_date: datetime) -> Image.Image:
             else:
                 day_counter += 1
                 if day_counter < day_of_year:
-                    draw.rectangle([x, y, x + square_size, y + square_size], fill=PAST_DAY_COLOR)
+                    draw_day_shape(draw, x, y, square_size, config.past_color, config.shape, fill=True)
                 elif day_counter == day_of_year:
-                    draw.rectangle([x, y, x + square_size, y + square_size], fill=TODAY_COLOR)
+                    draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=True)
                 else:
-                    draw.rectangle([x, y, x + square_size, y + square_size], outline=FUTURE_DAY_COLOR, width=2)
+                    draw_day_shape(draw, x, y, square_size, config.future_color, config.shape, fill=False)
 
             cell_counter += 1
 
@@ -239,19 +376,34 @@ def generate_split_layout(target_date: datetime) -> Image.Image:
     year_text_width = bbox[2] - bbox[0]
     year_x = (WIDTH - year_text_width) // 2
     year_y = start_y + grid_height + year_padding
-    draw.text((year_x, year_y), year_text, fill=TEXT_COLOR, font=year_font)
+    draw.text((year_x, year_y), year_text, fill=config.text_color, font=year_font)
+
+    # Draw progress text if enabled
+    if config.show_progress:
+        progress_pct = int((day_of_year / total_days) * 100)
+        progress_text = f"{progress_pct}%"
+        progress_font = get_font(28, config.font)
+        bbox = draw.textbbox((0, 0), progress_text, font=progress_font)
+        progress_width = bbox[2] - bbox[0]
+        progress_x = (WIDTH - progress_width) // 2
+        progress_y = year_y + year_text_height + GRID_UNIT
+        draw.text((progress_x, progress_y), progress_text, fill=config.text_color, font=progress_font)
 
     return img
 
 
-def generate_quarters_layout(target_date: datetime) -> Image.Image:
+def generate_quarters_layout(target_date: datetime, config: StyleConfig = None) -> Image.Image:
     """
     Generate four quarters layout (Q1-Q4 in 2x2 grid).
     """
+    if config is None:
+        config = StyleConfig()
+
     year = target_date.year
     day_of_year = target_date.timetuple().tm_yday
+    total_days = get_days_in_year(year)
 
-    img = Image.new('RGB', (WIDTH, HEIGHT), color=BG_COLOR)
+    img = Image.new('RGB', (WIDTH, HEIGHT), color=config.bg_color)
     draw = ImageDraw.Draw(img)
 
     SQUARE_UNITS = 1
@@ -293,8 +445,8 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
     h_spacing = 4 * GRID_UNIT
     v_spacing = 4 * GRID_UNIT
 
-    quarter_font = get_font(32)
-    year_font = get_font(42)
+    quarter_font = get_font(32, config.font)
+    year_font = get_font(42, config.font)
 
     # Estimate label width for "Q1" text at 32px (roughly 50px wide)
     label_width = 50
@@ -341,7 +493,7 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
         quarter_label = f"Q{q_idx + 1}"
         label_x = q_x - label_spacing - label_width
         label_y = q_y  # Align top of text with top of grid
-        draw.text((label_x, label_y), quarter_label, fill=TEXT_COLOR, font=quarter_font)
+        draw.text((label_x, label_y), quarter_label, fill=config.text_color, font=quarter_font)
 
         cell_counter = 0
         day_in_quarter = 0
@@ -363,11 +515,11 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
                     actual_day_of_year = actual_date.timetuple().tm_yday
 
                     if actual_day_of_year < day_of_year:
-                        draw.rectangle([x, y, x + square_size, y + square_size], fill=PAST_DAY_COLOR)
+                        draw_day_shape(draw, x, y, square_size, config.past_color, config.shape, fill=True)
                     elif actual_day_of_year == day_of_year:
-                        draw.rectangle([x, y, x + square_size, y + square_size], fill=TODAY_COLOR)
+                        draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=True)
                     else:
-                        draw.rectangle([x, y, x + square_size, y + square_size], outline=FUTURE_DAY_COLOR, width=2)
+                        draw_day_shape(draw, x, y, square_size, config.future_color, config.shape, fill=False)
 
                 cell_counter += 1
 
@@ -377,15 +529,29 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
     year_text_width = bbox[2] - bbox[0]
     year_x = (WIDTH - year_text_width) // 2
     year_y = grid_start_y + total_height + year_padding
-    draw.text((year_x, year_y), year_text, fill=TEXT_COLOR, font=year_font)
+    draw.text((year_x, year_y), year_text, fill=config.text_color, font=year_font)
+
+    # Draw progress text if enabled
+    if config.show_progress:
+        progress_pct = int((day_of_year / total_days) * 100)
+        progress_text = f"{progress_pct}%"
+        progress_font = get_font(28, config.font)
+        bbox = draw.textbbox((0, 0), progress_text, font=progress_font)
+        progress_width = bbox[2] - bbox[0]
+        progress_x = (WIDTH - progress_width) // 2
+        progress_y = year_y + year_text_height + GRID_UNIT
+        draw.text((progress_x, progress_y), progress_text, fill=config.text_color, font=progress_font)
 
     return img
 
 
-def generate_thirds_layout(target_date: datetime) -> Image.Image:
+def generate_thirds_layout(target_date: datetime, config: StyleConfig = None) -> Image.Image:
     """
     Generate three-column layout (year divided into thirds).
     """
+    if config is None:
+        config = StyleConfig()
+
     year = target_date.year
     day_of_year = target_date.timetuple().tm_yday
     total_days = get_days_in_year(year)
@@ -394,7 +560,7 @@ def generate_thirds_layout(target_date: datetime) -> Image.Image:
     jan_1_weekday = (jan_1.weekday() + 1) % 7
     total_cells = jan_1_weekday + total_days
 
-    img = Image.new('RGB', (WIDTH, HEIGHT), color=BG_COLOR)
+    img = Image.new('RGB', (WIDTH, HEIGHT), color=config.bg_color)
     draw = ImageDraw.Draw(img)
 
     SQUARE_UNITS = 1
@@ -413,7 +579,7 @@ def generate_thirds_layout(target_date: datetime) -> Image.Image:
 
     total_width = 3 * third_width + 2 * h_spacing
 
-    year_font = get_font(42)
+    year_font = get_font(42, config.font)
     year_text_height = 50
     year_padding = GRID_UNIT * 2
 
@@ -446,11 +612,11 @@ def generate_thirds_layout(target_date: datetime) -> Image.Image:
                 else:
                     day_counter += 1
                     if day_counter < day_of_year:
-                        draw.rectangle([x, y, x + square_size, y + square_size], fill=PAST_DAY_COLOR)
+                        draw_day_shape(draw, x, y, square_size, config.past_color, config.shape, fill=True)
                     elif day_counter == day_of_year:
-                        draw.rectangle([x, y, x + square_size, y + square_size], fill=TODAY_COLOR)
+                        draw_day_shape(draw, x, y, square_size, config.today_color, config.shape, fill=True)
                     else:
-                        draw.rectangle([x, y, x + square_size, y + square_size], outline=FUTURE_DAY_COLOR, width=2)
+                        draw_day_shape(draw, x, y, square_size, config.future_color, config.shape, fill=False)
 
                 cell_counter += 1
                 third_cells_drawn += 1
@@ -461,7 +627,18 @@ def generate_thirds_layout(target_date: datetime) -> Image.Image:
     year_text_width = bbox[2] - bbox[0]
     year_x = (WIDTH - year_text_width) // 2
     year_y = start_y + third_height + year_padding
-    draw.text((year_x, year_y), year_text, fill=TEXT_COLOR, font=year_font)
+    draw.text((year_x, year_y), year_text, fill=config.text_color, font=year_font)
+
+    # Draw progress text if enabled
+    if config.show_progress:
+        progress_pct = int((day_of_year / total_days) * 100)
+        progress_text = f"{progress_pct}%"
+        progress_font = get_font(28, config.font)
+        bbox = draw.textbbox((0, 0), progress_text, font=progress_font)
+        progress_width = bbox[2] - bbox[0]
+        progress_x = (WIDTH - progress_width) // 2
+        progress_y = year_y + year_text_height + GRID_UNIT
+        draw.text((progress_x, progress_y), progress_text, fill=config.text_color, font=progress_font)
 
     return img
 
