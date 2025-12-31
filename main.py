@@ -288,10 +288,10 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
     label_width = 50
     label_spacing = GRID_UNIT  # 16px spacing between label and grid
 
-    # Each quarter cell includes: label + spacing + grid
-    # Horizontal spacing between quarters needs to fit a label (label_width + some padding)
-    # Use enough spacing to comfortably fit the label between quarters
-    h_spacing_with_label = label_width + (2 * label_spacing)  # Label width plus padding on both sides
+    # For labels between grids (Q2, Q4), they should be centered with equal spacing on both sides
+    # Spacing between grids = padding + label_width + padding
+    side_padding = 2 * GRID_UNIT  # 32px on each side of centered label
+    h_spacing_with_label = (2 * side_padding) + label_width  # Total spacing between grids
 
     # Calculate total width: 2 grids + labels on left of each + spacing between
     # Layout: [label][grid] [spacing with room for label] [label][grid]
