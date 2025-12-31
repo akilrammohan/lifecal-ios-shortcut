@@ -288,25 +288,23 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
     label_width = 50
     label_spacing = GRID_UNIT  # 16px spacing between label and grid
 
-    # Total width now includes labels on the left of each column
-    # Each column: label + spacing + quarter_width
-    column_width = label_width + label_spacing + quarter_width
-    total_width = 2 * column_width + h_spacing
+    # First, center the quarter grids (without considering labels)
+    total_grid_width = 2 * quarter_width + h_spacing
     total_height = 2 * quarter_height + v_spacing
 
     available_width = WIDTH - (MARGIN_LEFT + MARGIN_RIGHT) * GRID_UNIT
 
-    # Center the entire construct (labels + grids)
-    construct_start_x = MARGIN_LEFT * GRID_UNIT + (available_width - total_width) // 2
+    # Center the grids
+    grid_start_x = MARGIN_LEFT * GRID_UNIT + (available_width - total_grid_width) // 2
     grid_bottom_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT)
     grid_start_y = grid_bottom_y - total_height
 
-    # Positions for each quarter (these are grid positions, labels will be to the left)
+    # Positions for each quarter grid (centered)
     quarter_grid_positions = [
-        (construct_start_x + label_width + label_spacing, grid_start_y),
-        (construct_start_x + column_width + h_spacing + label_width + label_spacing, grid_start_y),
-        (construct_start_x + label_width + label_spacing, grid_start_y + quarter_height + v_spacing),
-        (construct_start_x + column_width + h_spacing + label_width + label_spacing, grid_start_y + quarter_height + v_spacing),
+        (grid_start_x, grid_start_y),
+        (grid_start_x + quarter_width + h_spacing, grid_start_y),
+        (grid_start_x, grid_start_y + quarter_height + v_spacing),
+        (grid_start_x + quarter_width + h_spacing, grid_start_y + quarter_height + v_spacing),
     ]
 
     for q_idx, (q_x, q_y) in enumerate(quarter_grid_positions):
