@@ -268,8 +268,8 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
     ]
 
     try:
-        quarter_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 18)
-        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 42)
+        quarter_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 64)
+        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 84)
     except:
         quarter_font = ImageFont.load_default()
         year_font = ImageFont.load_default()
@@ -278,7 +278,7 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
         q_info = quarter_info[q_idx]
 
         quarter_label = f"Q{q_idx + 1}"
-        draw.text((q_x, q_y - 28), quarter_label, fill=TEXT_COLOR, font=quarter_font)
+        draw.text((q_x, q_y - 80), quarter_label, fill=TEXT_COLOR, font=quarter_font)
 
         cell_counter = 0
         day_in_quarter = 0
@@ -503,8 +503,8 @@ def generate_months_layout(target_date: datetime) -> Image.Image:
     grid_start_y = grid_bottom_y - total_height
 
     try:
-        month_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 18)
-        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 42)
+        month_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 64)
+        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 84)
     except:
         month_font = ImageFont.load_default()
         year_font = ImageFont.load_default()
@@ -523,7 +523,7 @@ def generate_months_layout(target_date: datetime) -> Image.Image:
         month_start_weekday = (month_start.weekday() + 1) % 7
 
         month_name = month_start.strftime("%b")
-        draw.text((month_x, month_y - 28), month_name, fill=TEXT_COLOR, font=month_font)
+        draw.text((month_x, month_y - 80), month_name, fill=TEXT_COLOR, font=month_font)
 
         cell_counter = 0
         for week in range(max_month_rows):
