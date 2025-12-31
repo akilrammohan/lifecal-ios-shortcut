@@ -19,28 +19,7 @@ All routes return PNG (1179×2556px).
 - `/wide` - 14 columns (two weeks side-by-side)
 - `/months` - 12-month calendar in 3×4 grid
 
-## Customization
-
-Add query parameters to customize your wallpaper:
-
-| Parameter | Description | Default | Example |
-|-----------|-------------|---------|---------|
-| `date` | Target date | today | `2025-12-31` |
-| `bg` | Background color | `1a1a1a` | `000000` |
-| `past` | Past days fill | `ffffff` | `cccccc` |
-| `today` | Today highlight | `F56B3F` | `ff0000` |
-| `future` | Future outline | `404040` | `666666` |
-| `text` | Text color | `ffffff` | `aaaaaa` |
-| `shape` | Day shape | `square` | `circle`, `rounded` |
-| `progress` | Show year % | off | `true` |
-| `font` | Font style | `sans` | `serif`, `mono` |
-
-**Example URLs:**
-```
-/quarters?shape=circle&progress=true
-/standard?bg=000000&today=ff5555&font=mono
-/months?past=cccccc&future=333333&shape=rounded
-```
+Customize colors, shapes, fonts, and more via query strings. See [CUSTOMIZATION.md](CUSTOMIZATION.md).
 
 ## iOS Shortcut Setup
 
