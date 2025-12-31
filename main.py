@@ -27,10 +27,14 @@ TEXT_COLOR = '#ffffff'
 
 def get_font(size: int) -> ImageFont.FreeTypeFont:
     """
-    Try to load a TrueType font from common system locations.
-    Falls back to a reasonable default if none found.
+    Try to load a TrueType font from bundled font or common system locations.
     """
+    # Get the directory where this script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
     font_paths = [
+        # Bundled font (ships with the project)
+        os.path.join(script_dir, "DejaVuSans.ttf"),
         # Linux (Vercel, Ubuntu, Debian)
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/dejavu/DejaVuSans.ttf",
