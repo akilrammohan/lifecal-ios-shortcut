@@ -1,12 +1,7 @@
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
 from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime, timedelta
-from io import BytesIO
 import calendar
 import math
-
-app = FastAPI()
 
 # iPhone 15 / 15 Pro dimensions
 WIDTH = 1179
@@ -563,22 +558,6 @@ def generate_months_layout(target_date: datetime) -> Image.Image:
     return img
 
 
-def create_image_response(img: Image.Image, target_date: datetime, layout_name: str) -> StreamingResponse:
-    """Helper to convert PIL Image to StreamingResponse."""
-    img_bytes = BytesIO()
-    img.save(img_bytes, format='PNG', optimize=True)
-    img_bytes.seek(0)
-
-    return StreamingResponse(
-        img_bytes,
-        media_type="image/png",
-        headers={
-            "Cache-Control": "public, max-age=3600",
-            "Content-Disposition": f"inline; filename={layout_name}_{target_date.strftime('%Y-%m-%d')}.png"
-        }
-    )
-
-
 def parse_date(date: str = None) -> datetime:
     """Parse date parameter or return today."""
     if date:
@@ -587,78 +566,3 @@ def parse_date(date: str = None) -> datetime:
         except ValueError:
             return datetime.now()
     return datetime.now()
-
-
-@app.get("/")
-def root():
-    """API info with all available layouts."""
-    return {
-        "message": "Yearly Calendar Wallpaper API",
-        "layouts": {
-            "standard": "Single column (original layout)",
-            "split": "Two columns (year split in half)",
-            "quarters": "Four quarters (Q1-Q4 in 2x2 grid)",
-            "thirds": "Three columns (year divided into thirds)",
-            "wide": "Wide grid (14 columns - two weeks side-by-side)",
-            "months": "12 months (3x4 traditional calendar grid)"
-        },
-        "usage": "GET /{layout}?date=YYYY-MM-DD (date parameter optional, defaults to today)",
-        "examples": [
-            "/standard?date=2025-12-31",
-            "/quarters",
-            "/months?date=2025-06-15"
-        ]
-    }
-
-
-@app.get("/standard")
-def get_standard(date: str = None):
-    """Standard single-column yearly calendar."""
-    target_date = parse_date(date)
-    img = generate_standard_layout(target_date)
-    return create_image_response(img, target_date, "standard")
-
-
-@app.get("/split")
-def get_split(date: str = None):
-    """Two-column layout (year split in half)."""
-    target_date = parse_date(date)
-    img = generate_split_layout(target_date)
-    return create_image_response(img, target_date, "split")
-
-
-@app.get("/quarters")
-def get_quarters(date: str = None):
-    """Four quarters layout (Q1-Q4 in 2x2 grid)."""
-    target_date = parse_date(date)
-    img = generate_quarters_layout(target_date)
-    return create_image_response(img, target_date, "quarters")
-
-
-@app.get("/thirds")
-def get_thirds(date: str = None):
-    """Three-column layout (year divided into thirds)."""
-    target_date = parse_date(date)
-    img = generate_thirds_layout(target_date)
-    return create_image_response(img, target_date, "thirds")
-
-
-@app.get("/wide")
-def get_wide(date: str = None):
-    """Wide grid layout (14 columns)."""
-    target_date = parse_date(date)
-    img = generate_wide_layout(target_date)
-    return create_image_response(img, target_date, "wide")
-
-
-@app.get("/months")
-def get_months(date: str = None):
-    """12-month grid layout (3x4 traditional calendar)."""
-    target_date = parse_date(date)
-    img = generate_months_layout(target_date)
-    return create_image_response(img, target_date, "months")
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
