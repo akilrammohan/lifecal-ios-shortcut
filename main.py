@@ -284,13 +284,14 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
     quarter_font = get_font(32)
     year_font = get_font(42)
 
-    # Estimate label width for "Q1" text at 32px (roughly 50px wide)
-    label_width = 50
+    # When rotated 90 degrees, the text width becomes height
+    # For "Q1" at 32px, roughly 50px wide becomes 50px tall when rotated
+    label_width_rotated = 32  # This is the horizontal space the rotated text takes (font size)
     label_spacing = GRID_UNIT  # 16px spacing between label and grid
 
     # Total width now includes labels on the left of each column
     # Each column: label + spacing + quarter_width
-    column_width = label_width + label_spacing + quarter_width
+    column_width = label_width_rotated + label_spacing + quarter_width
     total_width = 2 * column_width + h_spacing
     total_height = 2 * quarter_height + v_spacing
 
@@ -303,20 +304,32 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
 
     # Positions for each quarter (these are grid positions, labels will be to the left)
     quarter_grid_positions = [
-        (construct_start_x + label_width + label_spacing, grid_start_y),
-        (construct_start_x + column_width + h_spacing + label_width + label_spacing, grid_start_y),
-        (construct_start_x + label_width + label_spacing, grid_start_y + quarter_height + v_spacing),
-        (construct_start_x + column_width + h_spacing + label_width + label_spacing, grid_start_y + quarter_height + v_spacing),
+        (construct_start_x + label_width_rotated + label_spacing, grid_start_y),
+        (construct_start_x + column_width + h_spacing + label_width_rotated + label_spacing, grid_start_y),
+        (construct_start_x + label_width_rotated + label_spacing, grid_start_y + quarter_height + v_spacing),
+        (construct_start_x + column_width + h_spacing + label_width_rotated + label_spacing, grid_start_y + quarter_height + v_spacing),
     ]
 
     for q_idx, (q_x, q_y) in enumerate(quarter_grid_positions):
         q_info = quarter_info[q_idx]
 
-        # Draw label to the left of the grid, vertically centered
+        # Create rotated label to the left of the grid
         quarter_label = f"Q{q_idx + 1}"
-        label_x = q_x - label_spacing - label_width
-        label_y = q_y + (quarter_height // 2) - 16  # Roughly center vertically
-        draw.text((label_x, label_y), quarter_label, fill=TEXT_COLOR, font=quarter_font)
+
+        # Create a temporary image for the text
+        text_img = Image.new('RGBA', (100, 100), (0, 0, 0, 0))
+        text_draw = ImageDraw.Draw(text_img)
+        text_draw.text((0, 0), quarter_label, fill=TEXT_COLOR, font=quarter_font)
+
+        # Rotate 90 degrees counter-clockwise
+        text_img_rotated = text_img.rotate(90, expand=True)
+
+        # Calculate position: to the left of grid, vertically centered
+        label_x = q_x - label_spacing - label_width_rotated
+        label_y = q_y + (quarter_height // 2) - (text_img_rotated.height // 2)
+
+        # Paste the rotated text onto the main image
+        img.paste(text_img_rotated, (label_x, label_y), text_img_rotated)
 
         cell_counter = 0
         day_in_quarter = 0
