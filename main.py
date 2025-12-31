@@ -14,8 +14,8 @@ GRID_UNIT = 16
 # Margins (in grid units)
 MARGIN_LEFT = 4    # 64px
 MARGIN_RIGHT = 4   # 64px
-MARGIN_TOP = 4     # 64px
-MARGIN_BOTTOM = 10 # 160px
+MARGIN_TOP = 8     # 128px (allows space for time/date at top)
+MARGIN_BOTTOM = 8  # 128px (balanced with top)
 
 # Colors
 BG_COLOR = '#1a1a1a'
@@ -96,13 +96,17 @@ def generate_standard_layout(target_date: datetime) -> Image.Image:
     grid_width = (cols * square_size) + ((cols - 1) * gap_size)
     grid_height = (rows * square_size) + ((rows - 1) * gap_size)
 
-    available_width = WIDTH - (MARGIN_LEFT + MARGIN_RIGHT) * GRID_UNIT
-    start_x = MARGIN_LEFT * GRID_UNIT + (available_width - grid_width) // 2
-
-    grid_bottom_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT)
-    start_y = grid_bottom_y - grid_height
-
     year_font = get_font(42)
+    year_text_height = 50  # Approximate height for 42px font
+    year_padding = GRID_UNIT * 2  # 32px padding below grid
+
+    # Calculate available space and center grid vertically
+    available_width = WIDTH - (MARGIN_LEFT + MARGIN_RIGHT) * GRID_UNIT
+    available_height = HEIGHT - (MARGIN_TOP + MARGIN_BOTTOM) * GRID_UNIT
+    total_content_height = grid_height + year_padding + year_text_height
+
+    start_x = MARGIN_LEFT * GRID_UNIT + (available_width - grid_width) // 2
+    start_y = MARGIN_TOP * GRID_UNIT + (available_height - total_content_height) // 2
 
     cell_counter = 0
     day_counter = 0
@@ -129,9 +133,12 @@ def generate_standard_layout(target_date: datetime) -> Image.Image:
 
             cell_counter += 1
 
+    # Draw year text centered below the grid
     year_text = str(year)
-    year_x = MARGIN_LEFT * GRID_UNIT
-    year_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT) + (GRID_UNIT * 2)
+    bbox = draw.textbbox((0, 0), year_text, font=year_font)
+    year_text_width = bbox[2] - bbox[0]
+    year_x = (WIDTH - year_text_width) // 2  # Center horizontally
+    year_y = start_y + grid_height + year_padding
     draw.text((year_x, year_y), year_text, fill=TEXT_COLOR, font=year_font)
 
     return img
@@ -164,14 +171,18 @@ def generate_split_layout(target_date: datetime) -> Image.Image:
     grid_width = (cols * square_size) + ((cols - 1) * gap_size)
     grid_height = (rows_per_half * square_size) + ((rows_per_half - 1) * gap_size)
 
+    year_font = get_font(42)
+    year_text_height = 50
+    year_padding = GRID_UNIT * 2
+
     available_width = WIDTH - (MARGIN_LEFT + MARGIN_RIGHT) * GRID_UNIT
+    available_height = HEIGHT - (MARGIN_TOP + MARGIN_BOTTOM) * GRID_UNIT
+    total_content_height = grid_height + year_padding + year_text_height
 
     horizontal_spacing = 4 * GRID_UNIT
     total_width = 2 * grid_width + horizontal_spacing
     start_x = MARGIN_LEFT * GRID_UNIT + (available_width - total_width) // 2
-
-    grid_bottom_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT)
-    start_y = grid_bottom_y - grid_height
+    start_y = MARGIN_TOP * GRID_UNIT + (available_height - total_content_height) // 2
 
     cell_counter = 0
     day_counter = 0
@@ -222,11 +233,12 @@ def generate_split_layout(target_date: datetime) -> Image.Image:
 
             cell_counter += 1
 
-    year_font = get_font(42)
-
+    # Draw year text centered below the grid
     year_text = str(year)
-    year_x = MARGIN_LEFT * GRID_UNIT
-    year_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT) + (GRID_UNIT * 2)
+    bbox = draw.textbbox((0, 0), year_text, font=year_font)
+    year_text_width = bbox[2] - bbox[0]
+    year_x = (WIDTH - year_text_width) // 2
+    year_y = start_y + grid_height + year_padding
     draw.text((year_x, year_y), year_text, fill=TEXT_COLOR, font=year_font)
 
     return img
@@ -298,12 +310,16 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
     total_width = 2 * quarter_width + h_spacing_with_label + 2 * (label_width + label_spacing)
     total_height = 2 * quarter_height + v_spacing
 
+    year_text_height = 50
+    year_padding = GRID_UNIT * 2
+
     available_width = WIDTH - (MARGIN_LEFT + MARGIN_RIGHT) * GRID_UNIT
+    available_height = HEIGHT - (MARGIN_TOP + MARGIN_BOTTOM) * GRID_UNIT
+    total_content_height = total_height + year_padding + year_text_height
 
     # Center the entire construct (labels + grids + spacing)
     construct_start_x = MARGIN_LEFT * GRID_UNIT + (available_width - total_width) // 2
-    grid_bottom_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT)
-    grid_start_y = grid_bottom_y - total_height
+    grid_start_y = MARGIN_TOP * GRID_UNIT + (available_height - total_content_height) // 2
 
     # First grid starts after its label
     first_grid_x = construct_start_x + label_width + label_spacing
@@ -355,9 +371,12 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
 
                 cell_counter += 1
 
+    # Draw year text centered below the grid
     year_text = str(year)
-    year_x = MARGIN_LEFT * GRID_UNIT
-    year_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT) + (GRID_UNIT * 2)
+    bbox = draw.textbbox((0, 0), year_text, font=year_font)
+    year_text_width = bbox[2] - bbox[0]
+    year_x = (WIDTH - year_text_width) // 2
+    year_y = grid_start_y + total_height + year_padding
     draw.text((year_x, year_y), year_text, fill=TEXT_COLOR, font=year_font)
 
     return img
@@ -394,11 +413,16 @@ def generate_thirds_layout(target_date: datetime) -> Image.Image:
 
     total_width = 3 * third_width + 2 * h_spacing
 
+    year_font = get_font(42)
+    year_text_height = 50
+    year_padding = GRID_UNIT * 2
+
     available_width = WIDTH - (MARGIN_LEFT + MARGIN_RIGHT) * GRID_UNIT
+    available_height = HEIGHT - (MARGIN_TOP + MARGIN_BOTTOM) * GRID_UNIT
+    total_content_height = third_height + year_padding + year_text_height
 
     start_x = MARGIN_LEFT * GRID_UNIT + (available_width - total_width) // 2
-    grid_bottom_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT)
-    start_y = grid_bottom_y - third_height
+    start_y = MARGIN_TOP * GRID_UNIT + (available_height - total_content_height) // 2
 
     cell_counter = 0
     day_counter = 0
@@ -431,11 +455,12 @@ def generate_thirds_layout(target_date: datetime) -> Image.Image:
                 cell_counter += 1
                 third_cells_drawn += 1
 
-    year_font = get_font(42)
-
+    # Draw year text centered below the grid
     year_text = str(year)
-    year_x = MARGIN_LEFT * GRID_UNIT
-    year_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT) + (GRID_UNIT * 2)
+    bbox = draw.textbbox((0, 0), year_text, font=year_font)
+    year_text_width = bbox[2] - bbox[0]
+    year_x = (WIDTH - year_text_width) // 2
+    year_y = start_y + third_height + year_padding
     draw.text((year_x, year_y), year_text, fill=TEXT_COLOR, font=year_font)
 
     return img
@@ -467,11 +492,16 @@ def generate_wide_layout(target_date: datetime) -> Image.Image:
     grid_width = (cols * square_size) + ((cols - 1) * gap_size)
     grid_height = (rows * square_size) + ((rows - 1) * gap_size)
 
+    year_font = get_font(42)
+    year_text_height = 50
+    year_padding = GRID_UNIT * 2
+
     available_width = WIDTH - (MARGIN_LEFT + MARGIN_RIGHT) * GRID_UNIT
+    available_height = HEIGHT - (MARGIN_TOP + MARGIN_BOTTOM) * GRID_UNIT
+    total_content_height = grid_height + year_padding + year_text_height
 
     start_x = MARGIN_LEFT * GRID_UNIT + (available_width - grid_width) // 2
-    grid_bottom_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT)
-    start_y = grid_bottom_y - grid_height
+    start_y = MARGIN_TOP * GRID_UNIT + (available_height - total_content_height) // 2
 
     cell_counter = 0
     day_counter = 0
@@ -497,11 +527,12 @@ def generate_wide_layout(target_date: datetime) -> Image.Image:
 
             cell_counter += 1
 
-    year_font = get_font(42)
-
+    # Draw year text centered below the grid
     year_text = str(year)
-    year_x = MARGIN_LEFT * GRID_UNIT
-    year_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT) + (GRID_UNIT * 2)
+    bbox = draw.textbbox((0, 0), year_text, font=year_font)
+    year_text_width = bbox[2] - bbox[0]
+    year_x = (WIDTH - year_text_width) // 2
+    year_y = start_y + grid_height + year_padding
     draw.text((year_x, year_y), year_text, fill=TEXT_COLOR, font=year_font)
 
     return img
@@ -537,14 +568,17 @@ def generate_months_layout(target_date: datetime) -> Image.Image:
     total_width = (month_grid_cols * month_width) + ((month_grid_cols - 1) * month_h_spacing)
     total_height = (month_grid_rows * month_height) + ((month_grid_rows - 1) * month_v_spacing)
 
-    available_width = WIDTH - (MARGIN_LEFT + MARGIN_RIGHT) * GRID_UNIT
-
-    grid_start_x = MARGIN_LEFT * GRID_UNIT + (available_width - total_width) // 2
-    grid_bottom_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT)
-    grid_start_y = grid_bottom_y - total_height
-
     month_font = get_font(32)
     year_font = get_font(42)
+    year_text_height = 50
+    year_padding = GRID_UNIT * 2
+
+    available_width = WIDTH - (MARGIN_LEFT + MARGIN_RIGHT) * GRID_UNIT
+    available_height = HEIGHT - (MARGIN_TOP + MARGIN_BOTTOM) * GRID_UNIT
+    total_content_height = total_height + year_padding + year_text_height
+
+    grid_start_x = MARGIN_LEFT * GRID_UNIT + (available_width - total_width) // 2
+    grid_start_y = MARGIN_TOP * GRID_UNIT + (available_height - total_content_height) // 2
 
     day_counter = 0
 
@@ -587,9 +621,12 @@ def generate_months_layout(target_date: datetime) -> Image.Image:
 
                 cell_counter += 1
 
+    # Draw year text centered below the grid
     year_text = str(year)
-    year_x = MARGIN_LEFT * GRID_UNIT
-    year_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT) + (GRID_UNIT * 2)
+    bbox = draw.textbbox((0, 0), year_text, font=year_font)
+    year_text_width = bbox[2] - bbox[0]
+    year_x = (WIDTH - year_text_width) // 2
+    year_y = grid_start_y + total_height + year_padding
     draw.text((year_x, year_y), year_text, fill=TEXT_COLOR, font=year_font)
 
     return img
