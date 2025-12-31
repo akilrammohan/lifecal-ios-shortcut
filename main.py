@@ -72,7 +72,7 @@ def generate_standard_layout(target_date: datetime) -> Image.Image:
     start_y = grid_bottom_y - grid_height
 
     try:
-        year_font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 42)
+        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 42)
     except:
         year_font = ImageFont.load_default()
 
@@ -195,7 +195,7 @@ def generate_split_layout(target_date: datetime) -> Image.Image:
             cell_counter += 1
 
     try:
-        year_font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 42)
+        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 42)
     except:
         year_font = ImageFont.load_default()
 
@@ -273,8 +273,8 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
     ]
 
     try:
-        quarter_font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 18)
-        year_font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 42)
+        quarter_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 18)
+        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 42)
     except:
         quarter_font = ImageFont.load_default()
         year_font = ImageFont.load_default()
@@ -390,7 +390,7 @@ def generate_thirds_layout(target_date: datetime) -> Image.Image:
                 third_cells_drawn += 1
 
     try:
-        year_font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 42)
+        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 42)
     except:
         year_font = ImageFont.load_default()
 
@@ -459,7 +459,7 @@ def generate_wide_layout(target_date: datetime) -> Image.Image:
             cell_counter += 1
 
     try:
-        year_font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 42)
+        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 42)
     except:
         year_font = ImageFont.load_default()
 
@@ -508,8 +508,8 @@ def generate_months_layout(target_date: datetime) -> Image.Image:
     grid_start_y = grid_bottom_y - total_height
 
     try:
-        month_font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 18)
-        year_font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 42)
+        month_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 18)
+        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 42)
     except:
         month_font = ImageFont.load_default()
         year_font = ImageFont.load_default()
