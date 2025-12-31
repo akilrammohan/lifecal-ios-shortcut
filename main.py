@@ -12,10 +12,10 @@ HEIGHT = 2556
 GRID_UNIT = 16
 
 # Margins (in grid units)
-MARGIN_LEFT = 4    # 64px
-MARGIN_RIGHT = 4   # 64px
-MARGIN_TOP = 8     # 128px (allows space for time/date at top)
-MARGIN_BOTTOM = 8  # 128px (balanced with top)
+MARGIN_LEFT = 4     # 64px
+MARGIN_RIGHT = 4    # 64px
+MARGIN_TOP = 25     # 400px (bottom of iOS time text, virtual top of usable space)
+MARGIN_BOTTOM = 8   # 128px
 
 # Colors
 BG_COLOR = '#1a1a1a'
