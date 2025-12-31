@@ -1,6 +1,6 @@
-# Yearly Calendar iOS Wallpaper
+# Calendar Wallpapers for iOS
 
-API endpoint that generates yearly calendar wallpapers. Use with iOS Shortcuts to auto-update your lock screen with your progress through the year.
+API endpoints that generate calendar wallpapers for iOS. Auto-update your lock screen with your progress through the year or through life.
 
 <img src="https://wallpaper.akilr.com/standard" alt="Calendar Example" width="300">
 
@@ -12,6 +12,9 @@ Inspired by [this tweet by @luismbat](https://x.com/luismbat/status/200600218947
 
 All routes return PNG (1179×2556px).
 
+### Yearly Calendars
+Track your progress through the current year. Updates daily.
+
 - `/standard` - Single column layout
 - `/split` - Two columns (year split in half)
 - `/quarters` - Four quarters (Q1-Q4) in 2×2 grid with labels
@@ -19,6 +22,16 @@ All routes return PNG (1179×2556px).
 - `/wide` - 14 columns (two weeks side-by-side)
 - `/months` - 12-month calendar in 3×4 grid
 
+**Example:** `https://wallpaper.akilr.com/quarters?shape=circle&progress=true`
+
+### Life Calendar
+Track your progress through life. 52 weeks × 80+ years grid. Updates weekly.
+
+- `/life?birthday=YYYY-MM-DD` - Life in weeks (requires birthday parameter)
+
+**Example:** `https://wallpaper.akilr.com/life?birthday=1990-01-15&progress=true&shape=circle`
+
+### Customization
 Customize colors, shapes, fonts, and more via query strings. See [CUSTOMIZATION.md](CUSTOMIZATION.md).
 
 ## iOS Shortcut Setup
@@ -32,10 +45,6 @@ Customize colors, shapes, fonts, and more via query strings. See [CUSTOMIZATION.
 4. **Automate**: Go to Automation tab → New Automation → Time of Day → 6:00 AM → Run your shortcut
 
 That's it! Your wallpaper will update every morning.
-
-## Planned Additions
-
-- Full life calendar (80-year lifespan, takes your birthday)
 
 ## Credits
 
