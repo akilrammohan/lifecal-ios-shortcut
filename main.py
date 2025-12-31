@@ -14,7 +14,7 @@ GRID_UNIT = 16
 # Margins (in grid units)
 MARGIN_LEFT = 4     # 64px
 MARGIN_RIGHT = 4    # 64px
-MARGIN_TOP = 25     # 400px (bottom of iOS time text, virtual top of usable space)
+MARGIN_TOP = 50     # 800px (large padding below time text to center grid in lower half)
 MARGIN_BOTTOM = 8   # 128px
 
 # Colors
