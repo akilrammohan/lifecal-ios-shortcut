@@ -1,12 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/calendar",
-      "destination": "/api/calendar"
-    },
-    {
-      "source": "/",
-      "destination": "/api/calendar"
+      "source": "/(.*)",
+      "destination": "/api/index"
     }
   ]
 }
