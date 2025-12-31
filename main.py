@@ -281,30 +281,42 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
     h_spacing = 4 * GRID_UNIT
     v_spacing = 4 * GRID_UNIT
 
-    total_width = 2 * quarter_width + h_spacing
+    quarter_font = get_font(32)
+    year_font = get_font(42)
+
+    # Estimate label width for "Q1" text at 32px (roughly 50px wide)
+    label_width = 50
+    label_spacing = GRID_UNIT  # 16px spacing between label and grid
+
+    # Total width now includes labels on the left of each column
+    # Each column: label + spacing + quarter_width
+    column_width = label_width + label_spacing + quarter_width
+    total_width = 2 * column_width + h_spacing
     total_height = 2 * quarter_height + v_spacing
 
     available_width = WIDTH - (MARGIN_LEFT + MARGIN_RIGHT) * GRID_UNIT
 
-    grid_start_x = MARGIN_LEFT * GRID_UNIT + (available_width - total_width) // 2
+    # Center the entire construct (labels + grids)
+    construct_start_x = MARGIN_LEFT * GRID_UNIT + (available_width - total_width) // 2
     grid_bottom_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT)
     grid_start_y = grid_bottom_y - total_height
 
-    quarter_positions = [
-        (grid_start_x, grid_start_y),
-        (grid_start_x + quarter_width + h_spacing, grid_start_y),
-        (grid_start_x, grid_start_y + quarter_height + v_spacing),
-        (grid_start_x + quarter_width + h_spacing, grid_start_y + quarter_height + v_spacing),
+    # Positions for each quarter (these are grid positions, labels will be to the left)
+    quarter_grid_positions = [
+        (construct_start_x + label_width + label_spacing, grid_start_y),
+        (construct_start_x + column_width + h_spacing + label_width + label_spacing, grid_start_y),
+        (construct_start_x + label_width + label_spacing, grid_start_y + quarter_height + v_spacing),
+        (construct_start_x + column_width + h_spacing + label_width + label_spacing, grid_start_y + quarter_height + v_spacing),
     ]
 
-    quarter_font = get_font(32)
-    year_font = get_font(42)
-
-    for q_idx, (q_x, q_y) in enumerate(quarter_positions):
+    for q_idx, (q_x, q_y) in enumerate(quarter_grid_positions):
         q_info = quarter_info[q_idx]
 
+        # Draw label to the left of the grid, vertically centered
         quarter_label = f"Q{q_idx + 1}"
-        draw.text((q_x, q_y - 45), quarter_label, fill=TEXT_COLOR, font=quarter_font)
+        label_x = q_x - label_spacing - label_width
+        label_y = q_y + (quarter_height // 2) - 16  # Roughly center vertically
+        draw.text((label_x, label_y), quarter_label, fill=TEXT_COLOR, font=quarter_font)
 
         cell_counter = 0
         day_in_quarter = 0
