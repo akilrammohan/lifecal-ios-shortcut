@@ -18,6 +18,7 @@ from main import (
     parse_date
 )
 from io import BytesIO
+from PIL import Image
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -72,18 +73,24 @@ class handler(BaseHTTPRequestHandler):
                 layout_func = layout_map[path]
                 img = layout_func(target_date)
 
-                # Convert to PNG bytes
+                # Convert to JPEG bytes (much smaller than PNG, better for iOS Shortcuts)
                 img_bytes = BytesIO()
-                img.save(img_bytes, format='PNG', optimize=True)
+                # Convert RGBA to RGB for JPEG
+                if img.mode == 'RGBA':
+                    rgb_img = Image.new('RGB', img.size, (26, 26, 26))  # BG_COLOR
+                    rgb_img.paste(img, mask=img.split()[3] if len(img.split()) == 4 else None)
+                    img = rgb_img
+                img.save(img_bytes, format='JPEG', quality=95, optimize=True)
                 img_bytes.seek(0)
 
                 # Send response
                 self.send_response(200)
-                self.send_header('Content-type', 'image/png')
-                self.send_header('Cache-Control', 'public, max-age=3600')
+                self.send_header('Content-type', 'image/jpeg')
+                self.send_header('Cache-Control', 'public, max-age=86400')  # 24 hours
+                self.send_header('Content-Length', str(len(img_bytes.getvalue())))
                 layout_name = path[1:]  # Remove leading /
                 self.send_header('Content-Disposition',
-                               f'inline; filename={layout_name}_{target_date.strftime("%Y-%m-%d")}.png')
+                               f'inline; filename={layout_name}_{target_date.strftime("%Y-%m-%d")}.jpg')
                 self.end_headers()
                 self.wfile.write(img_bytes.getvalue())
             except Exception as e:

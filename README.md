@@ -10,7 +10,7 @@ Inspired by [this tweet by @luismbat](https://x.com/luismbat/status/200600218947
 
 **Base URL:** `https://wallpaper.akilr.com`
 
-All routes accept optional `?date=YYYY-MM-DD` parameter. Returns PNG (1179×2556px).
+All routes accept optional `?date=YYYY-MM-DD` parameter. Returns JPEG (1179×2556px).
 
 - `/standard` - Single column layout
 - `/split` - Two columns (year split in half)
