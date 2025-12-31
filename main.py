@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime, timedelta
 import calendar
 import math
+import os
 
 # iPhone 15 / 15 Pro dimensions
 WIDTH = 1179
@@ -22,6 +23,37 @@ PAST_DAY_COLOR = '#ffffff'
 TODAY_COLOR = '#F56B3F'
 FUTURE_DAY_COLOR = '#404040'
 TEXT_COLOR = '#ffffff'
+
+
+def get_font(size: int) -> ImageFont.FreeTypeFont:
+    """
+    Try to load a TrueType font from common system locations.
+    Falls back to a reasonable default if none found.
+    """
+    font_paths = [
+        # Linux (Vercel, Ubuntu, Debian)
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        # macOS
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/Library/Fonts/Arial.ttf",
+        # Windows
+        "C:\\Windows\\Fonts\\Arial.ttf",
+        "C:\\Windows\\Fonts\\arial.ttf",
+    ]
+
+    for font_path in font_paths:
+        if os.path.exists(font_path):
+            try:
+                return ImageFont.truetype(font_path, size)
+            except:
+                continue
+
+    # If no font found, raise an error with helpful message
+    raise RuntimeError(
+        f"No TrueType font found. Tried: {', '.join(font_paths)}"
+    )
 
 
 def is_leap_year(year: int) -> bool:
@@ -66,10 +98,7 @@ def generate_standard_layout(target_date: datetime) -> Image.Image:
     grid_bottom_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT)
     start_y = grid_bottom_y - grid_height
 
-    try:
-        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 42)
-    except:
-        year_font = ImageFont.load_default()
+    year_font = get_font(84)
 
     cell_counter = 0
     day_counter = 0
@@ -189,10 +218,7 @@ def generate_split_layout(target_date: datetime) -> Image.Image:
 
             cell_counter += 1
 
-    try:
-        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 42)
-    except:
-        year_font = ImageFont.load_default()
+    year_font = get_font(84)
 
     year_text = str(year)
     year_x = MARGIN_LEFT * GRID_UNIT
@@ -267,12 +293,8 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
         (grid_start_x + quarter_width + h_spacing, grid_start_y + quarter_height + v_spacing),
     ]
 
-    try:
-        quarter_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 64)
-        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 84)
-    except:
-        quarter_font = ImageFont.load_default()
-        year_font = ImageFont.load_default()
+    quarter_font = get_font(64)
+    year_font = get_font(84)
 
     for q_idx, (q_x, q_y) in enumerate(quarter_positions):
         q_info = quarter_info[q_idx]
@@ -384,10 +406,7 @@ def generate_thirds_layout(target_date: datetime) -> Image.Image:
                 cell_counter += 1
                 third_cells_drawn += 1
 
-    try:
-        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 42)
-    except:
-        year_font = ImageFont.load_default()
+    year_font = get_font(84)
 
     year_text = str(year)
     year_x = MARGIN_LEFT * GRID_UNIT
@@ -453,10 +472,7 @@ def generate_wide_layout(target_date: datetime) -> Image.Image:
 
             cell_counter += 1
 
-    try:
-        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 42)
-    except:
-        year_font = ImageFont.load_default()
+    year_font = get_font(84)
 
     year_text = str(year)
     year_x = MARGIN_LEFT * GRID_UNIT
@@ -502,12 +518,8 @@ def generate_months_layout(target_date: datetime) -> Image.Image:
     grid_bottom_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT)
     grid_start_y = grid_bottom_y - total_height
 
-    try:
-        month_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 64)
-        year_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 84)
-    except:
-        month_font = ImageFont.load_default()
-        year_font = ImageFont.load_default()
+    month_font = get_font(64)
+    year_font = get_font(84)
 
     day_counter = 0
 
