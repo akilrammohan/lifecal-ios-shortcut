@@ -102,7 +102,7 @@ def generate_standard_layout(target_date: datetime) -> Image.Image:
     grid_bottom_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT)
     start_y = grid_bottom_y - grid_height
 
-    year_font = get_font(84)
+    year_font = get_font(42)
 
     cell_counter = 0
     day_counter = 0
@@ -222,7 +222,7 @@ def generate_split_layout(target_date: datetime) -> Image.Image:
 
             cell_counter += 1
 
-    year_font = get_font(84)
+    year_font = get_font(42)
 
     year_text = str(year)
     year_x = MARGIN_LEFT * GRID_UNIT
@@ -297,14 +297,14 @@ def generate_quarters_layout(target_date: datetime) -> Image.Image:
         (grid_start_x + quarter_width + h_spacing, grid_start_y + quarter_height + v_spacing),
     ]
 
-    quarter_font = get_font(64)
-    year_font = get_font(84)
+    quarter_font = get_font(32)
+    year_font = get_font(42)
 
     for q_idx, (q_x, q_y) in enumerate(quarter_positions):
         q_info = quarter_info[q_idx]
 
         quarter_label = f"Q{q_idx + 1}"
-        draw.text((q_x, q_y - 80), quarter_label, fill=TEXT_COLOR, font=quarter_font)
+        draw.text((q_x, q_y - 45), quarter_label, fill=TEXT_COLOR, font=quarter_font)
 
         cell_counter = 0
         day_in_quarter = 0
@@ -410,7 +410,7 @@ def generate_thirds_layout(target_date: datetime) -> Image.Image:
                 cell_counter += 1
                 third_cells_drawn += 1
 
-    year_font = get_font(84)
+    year_font = get_font(42)
 
     year_text = str(year)
     year_x = MARGIN_LEFT * GRID_UNIT
@@ -476,7 +476,7 @@ def generate_wide_layout(target_date: datetime) -> Image.Image:
 
             cell_counter += 1
 
-    year_font = get_font(84)
+    year_font = get_font(42)
 
     year_text = str(year)
     year_x = MARGIN_LEFT * GRID_UNIT
@@ -522,8 +522,8 @@ def generate_months_layout(target_date: datetime) -> Image.Image:
     grid_bottom_y = HEIGHT - (MARGIN_BOTTOM * GRID_UNIT)
     grid_start_y = grid_bottom_y - total_height
 
-    month_font = get_font(64)
-    year_font = get_font(84)
+    month_font = get_font(32)
+    year_font = get_font(42)
 
     day_counter = 0
 
@@ -539,7 +539,7 @@ def generate_months_layout(target_date: datetime) -> Image.Image:
         month_start_weekday = (month_start.weekday() + 1) % 7
 
         month_name = month_start.strftime("%b")
-        draw.text((month_x, month_y - 80), month_name, fill=TEXT_COLOR, font=month_font)
+        draw.text((month_x, month_y - 45), month_name, fill=TEXT_COLOR, font=month_font)
 
         cell_counter = 0
         for week in range(max_month_rows):
