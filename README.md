@@ -1,6 +1,6 @@
 # Yearly Calendar iOS Wallpaper
 
-An iOS Shortcut that displays your progress through the year as a visual grid. Updates your lock screen automatically each morning.
+API endpoint that generates yearly calendar wallpapers. Use with iOS Shortcuts to auto-update your lock screen with your progress through the year.
 
 <img src="https://wallpaper.akilr.com/standard" alt="Calendar Example" width="300">
 
